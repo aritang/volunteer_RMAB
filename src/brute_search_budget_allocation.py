@@ -71,7 +71,7 @@ def brute_force_search(simulator, n_episodes, n_epochs, discount):
     results = {}
     
     for budget_vector in itertools.product(*(range(int(b_ub)+1) for b_ub in B_UB[:-1])):
-        # print(budget_vector)
+        
         budget_vector_np = np.zeros(K, dtype=int)
         budget_vector_np[:-1] = budget_vector
         if sum(np.multiply(context_prob[:-1], budget_vector_np[:-1])) <= B:
@@ -80,6 +80,7 @@ def brute_force_search(simulator, n_episodes, n_epochs, discount):
             if sum(np.multiply(context_prob, budget_vector_np)) <= B:
                 # run is here
                 rewards = whittle_policy_type_specific(simulator, budget_vector_np, n_episodes=n_episodes, n_epochs=n_epochs, discount=discount)
+                print(f"B = {budget_vector_np}, reward = {np.mean(rewards)}")
                 results[tuple(budget_vector_np)] = np.mean(rewards)
         # print(f"\nreward = {np.mean(rewards)}\nbudget = {budget_vector_np}")
     return results

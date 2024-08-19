@@ -8,53 +8,36 @@ import random
 from volunteer_simulator import Volunteer_RMABSimulator
 
 class InstanceGenerator:
-    def __init__(self, N, K, seed=66, data_dir = 'data'):
-        """
-        Initialize the InstanceGenerator
-        with the number of arms (N), 
-        context size (K), 
-        and an optional random seed.
-        """
+    def __init__(self, N, K, seed=66, data_dir='data'):
         self.N = N
         self.K = K
         self.seed = seed
-        self.data_dir = data_dir
+        self.data_dir = os.path.join(data_dir, f'N_{N}_K_{K}_seed_{seed}')
         if seed is not None:
             np.random.seed(seed)
             random.seed(seed)
+        if not os.path.exists(self.data_dir):
+            os.makedirs(self.data_dir)
 
-    def generate_instances(self, M):
-        """
-        Generate M instances with transitions and context probabilities, storing them in JSON files.
-        """
+    def generate_instances(self, M = 1, homogeneous = True):
         instances = []
-        for _ in range(M):
-            transitions, context_prob = self.randomly_generate_transitions(N = self.N, K = self.K)
+        for m in range(M):
+            transitions, context_prob = self.randomly_generate_transitions(N=self.N, K=self.K, homogeneous=homogeneous)
+            instance_dir = os.path.join(self.data_dir, f'N_{self.N}_K_{self.K}_seed_{self.seed}_num_{m}')
+            if not os.path.exists(instance_dir):
+                os.makedirs(instance_dir)
+            
             instance = {
                 'transitions': transitions.tolist(),
                 'context_prob': context_prob.tolist()
             }
             instances.append(instance)
+            self.save_instance(instance, instance_dir)
 
-        # Saving instances to JSON files
-        for i, instance in enumerate(instances):
-            file_path = os.path.join(self.data_dir, f'transition_instance_{i}.json')
-            with open(file_path, 'w') as f:
-                json.dump(instance, f, indent=4)
-
-    def load_instances(self, M):
-        """
-        Load M instances from JSON files located in a specific directory into memory.
-        """
-        instances = []
-        for i in range(M):
-            file_path = os.path.join(self.data_dir, f'transition_instance_{i}.json')
-            with open(file_path, 'r') as f:
-                instance = json.load(f)
-                instance['transitions'] = np.array(instance['transitions'])
-                instance['context_prob'] = np.array(instance['context_prob'])
-                instances.append(instance)
-        return instances
+    def save_instance(self, instance, instance_dir):
+        file_path = os.path.join(instance_dir, 'instance_data.json')
+        with open(file_path, 'w') as f:
+            json.dump(instance, f, indent=4)
 
     def construct_volunteer_transition_matrix(self, N, K, q, context_prob, p, n_actions = 2):
         """
@@ -105,22 +88,71 @@ class InstanceGenerator:
 
         all_transitions = self.construct_volunteer_transition_matrix(N = N, K = K, q = q, context_prob=context_prob, p = p)
         return all_transitions, context_prob
+    
+    def load_instance(self):
+        pattern = f'N_{self.N}_K_{self.K}_seed_{self.seed}_num_'
+        directories = [d for d in os.listdir(self.data_dir) if d.startswith(pattern)]
+        if not directories:
+            print("No existing instances found, generating new instance...")
+            self.generate_instances(1)  # Generate one instance
+            directories = [d for d in os.listdir(self.data_dir) if d.startswith(pattern)]
+        
+        instance_dir = os.path.join(self.data_dir, directories[0])
+        file_path = os.path.join(instance_dir, 'instance_data.json')
+        with open(file_path, 'r') as f:
+            instance = json.load(f)
+            instance['transitions'] = np.array(instance['transitions'])
+            instance['context_prob'] = np.array(instance['context_prob'])
+        return instance
+    
+    def print_instance(self, all_transitions, context_prob):
+        """
+        input: all prob. matrices
+        job: get p, q, f and preview the parameters
+        """
+        p = np.zeros((self.N, self.K))
+        q = np.zeros(self.N)
+
+        for i in range(self.N):
+            q[i] = np.sum(all_transitions[i, 0, :, 1::2])
+            for k in range(self.K):
+                p[i, k] = np.sum(all_transitions[i, k*2 + 1, 1, ::2])
+        
+        if (all_transitions[0] == all_transitions[1]).all():
+            print(f"p_k:\n{np.round(p, 2)[0]}")
+            print(f"q = {np.round(q, 2)[0]}")
+            print(f"f_k = {np.round(context_prob, 2)}")
+
+    def get_original_vectors(self, all_transitions, context_prob):
+        """
+        input: all prob. matrices
+        job: get p, q, f and preview the parameters
+        """
+        p = np.zeros((self.N, self.K))
+        q = np.zeros(self.N)
+
+        for i in range(self.N):
+            q[i] = np.sum(all_transitions[i, 0, :, 1::2])
+            for k in range(self.K):
+                p[i, k] = np.sum(all_transitions[i, k*2 + 1, 1, ::2])
+
+        return p, q, context_prob
+
 
 if __name__ == '__main__':
     K = 6
     N = 60
-    generator = InstanceGenerator(N=N, K=K, seed=66)
-    generator.generate_instances(1)
-    instances = generator.load_instances(1)
-    print(f"created and loaded {len(instances)} Instances:")
-    
-    # use the first instance to construct an environment
-    all_transitions, context_prob = instances[0]['transitions'], instances[0]['context_prob']
-    
+    seed = 66
+    generator = InstanceGenerator(N=N, K=K, seed=seed)
+    instance = generator.load_instance()
+    print(f"Loaded Instance:\n{instance}")
+
+    # Simulation part using loaded instance
+    all_transitions, context_prob = instance['transitions'], instance['context_prob']
     T = 100
     budget = 20
     reward_vector = np.ones(K)
-    simulator = Volunteer_RMABSimulator(N = N, K = K, T = T, context_prob=context_prob, all_transitions=all_transitions, budget=budget, reward_vector=np.ones(K))
+    simulator = Volunteer_RMABSimulator(N=N, K=K, T=T, context_prob=context_prob, all_transitions=all_transitions, budget=budget, reward_vector=reward_vector)
     total_reward = 0
 
     for t in range(T):
@@ -132,7 +164,7 @@ if __name__ == '__main__':
         states, reward, done, _ = simulator.step(action)
         total_reward += reward
 
-    print('total reward: {}'.format(total_reward))
-    print(states)
+    print('Total reward:', total_reward)
+    print('Final states:', states)
 
     
