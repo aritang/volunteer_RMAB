@@ -58,5 +58,6 @@ Other configurations:
 - `--n_episodes` - for every instance run 6 times
 - `--n_epochs` - number of instances
 
+### reference
 
-
+[Optimistic Whittle Index Policy: Online Learning for Restless Bandits](https://arxiv.org/abs/2205.15372). Kai Wang*, Lily Xu*, Aparna Taneja, Milind Tambe
