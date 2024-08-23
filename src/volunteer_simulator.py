@@ -178,6 +178,20 @@ class Volunteer_RMABSimulator(gym.Env):
         return self.observe(), reward, done, {}
     def get_reward_external(self):
         return self.reward
+    
+    def get_original_vectors(self):
+        """
+        input: all prob. matrices
+        job: get p, q, f and preview the parameters
+        """
+        p = np.zeros((self.N, self.K))
+        q = np.zeros(self.N)
+
+        for i in range(self.N):
+            q[i] = np.sum(self.all_transitions[i, 0, :, 1::2])
+            for k in range(self.K):
+                p[i, k] = np.sum(self.all_transitions[i, k*2 + 1, 1, ::2])
+        return p, q, self.context_prob
 
     def get_reward(self, next_states, action):
         """
@@ -209,128 +223,6 @@ def random_transition(K, N, n_actions):
     all_transitions = all_transitions / np.sum(all_transitions, axis=-1, keepdims=True)
     return all_transitions
 
-# def assert_valid_transition(transitions):
-#     """
-#     check that acting is always good, and starting in good state is always good
-#     """
-#     bad = False
-#     N, n_states, n_actions, _ = transitions.shape
-#     for i in range(N):
-#         for s in range(n_states):
-#             # ensure acting is always good
-#             if transitions[i,s,1,1] < transitions[i,s,0,1]:
-#                 bad = True
-#                 print(f'acting should always be good! {transitions[i,s,1,1]:.3f} < {transitions[i,s,0,1]:.3f}')
-
-#             # assert transitions[i,s,1,1] >= transitions[i,s,0,1] + 1e-6, f'acting should always be good! {transitions[i,s,1,1]:.3f} < {transitions[i,s,0,1]:.3f}'
-
-#     for i in range(N):
-#         for a in range(n_actions):
-#             # ensure start state is always good
-#             # assert transitions[i,1,a,1] >= transitions[i,0,a,1] + 1e-6, f'good start state should always be good! {transitions[i,1,a,1]:.3f} < {transitions[i,0,a,1]:.3f}'
-#             if transitions[i,1,a,1] < transitions[i,0,a,1]:
-#                 bad = True
-#                 print(f'good start state should always be good! {transitions[i,1,a,1]:.3f} < {transitions[i,0,a,1]:.3f}')
-#     # assert bad != True
-
-# def random_valid_transition(K, N, n_states, n_actions):
-#     """ set initial transition probabilities
-#     returns array (N, S, A) that shows probability of transitioning to a **good** state
-
-#     enforce "valid" transitions: acting is always good, and starting in good state is always good """
-
-#     assert n_actions == 2
-
-#     transitions = np.random.random((K, N, n_states, n_actions))
-#     for k in range(K):
-#         for i in range(N):
-#             for s in range(n_states):
-#                 # ensure acting is always good
-#                 if transitions[k, i,s,1] < transitions[k, i,s,0]:
-#                     diff = 1 - transitions[k, i,s,0]
-#                     transitions[k, i,s,1] = transitions[k, i,s,0] + (np.random.rand() * diff)
-#     for k in range(K):
-#         for i in range(N):
-#             for a in range(n_actions):
-#                 # ensure starting in good state is always good
-#                 if transitions[k, i,1,a] < transitions[k, i,0,a]:
-#                     diff = 1 - transitions[k, i,0,a]
-#                     transitions[k, i,1,a] = transitions[k, i,0,a] + (np.random.rand() * diff)
-
-#     full_transitions = np.zeros((K, N, n_states, n_actions, n_states))
-#     full_transitions[:,:,:,:,1] = transitions
-#     full_transitions[:,:,:,:,0] = 1 - transitions
-
-#     # return transitions
-#     return full_transitions
-
-
-# def random_valid_transition_round_down(N, n_states, n_actions):
-#     """ set initial transition probabilities
-#     returns array (N, S, A) that shows probability of transitioning to a **good** state
-
-#     enforce "valid" transitions: acting is always good, and starting in good state is always good """
-
-#     assert n_actions == 2
-
-#     transitions = np.random.random((N, n_states, n_actions))
-
-#     for i in range(N):
-#         for s in range(n_states):
-#             # ensure acting is always good
-#             if transitions[i,s,1] < transitions[i,s,0]:
-#                 transitions[i,s,0] = transitions[i,s,1] * np.random.rand()
-
-#     for i in range(N):
-#         for a in range(n_actions):
-#             # ensure starting in good state is always good
-#             if transitions[i,1,a] < transitions[i,0,a]:
-#                 transitions[i,0,a] = transitions[i,1,a] * np.random.rand()
-
-#     full_transitions = np.zeros((N, n_states, n_actions, n_states))
-#     full_transitions[:,:,:,1] = transitions
-#     full_transitions[:,:,:,0] = 1 - transitions
-
-#     return full_transitions
-
-
-# def synthetic_transition_small_window(N, n_states, n_actions, low, high):
-#     """ set initial transition probabilities
-#     returns array (N, S, A) that shows probability of transitioning to a **good** state
-
-#     enforce "valid" transitions: acting is always good, and starting in good state is always good """
-
-#     assert n_actions == 2
-#     assert low < high
-#     assert 0 < low < 1
-#     assert 0 < high < 1
-
-#     transitions = np.random.random((N, n_states, n_actions))
-
-#     for i in range(N):
-#         for s in range(n_states):
-#             # ensure acting is always good
-#             if transitions[i,s,1] < transitions[i,s,0]:
-#                 transitions[i,s,0] = transitions[i,s,1] * np.random.rand()
-
-#     for i in range(N):
-#         for a in range(n_actions):
-#             # ensure starting in good state is always good
-#             if transitions[i,1,a] < transitions[i,0,a]:
-#                 transitions[i,0,a] = transitions[i,1,a] * np.random.rand()
-
-#     # scale down to a small window .4 to .6
-#     max_val = np.max(transitions)
-#     min_val = np.min(transitions)
-
-#     transitions = transitions - min_val
-#     transitions = transitions * (high - low) * (max_val - min_val) + low
-
-#     full_transitions = np.zeros((N, n_states, n_actions, n_states))
-#     full_transitions[:,:,:,1] = transitions
-#     full_transitions[:,:,:,0] = 1 - transitions
-
-#     return full_transitions
 
 def construct_volunteer_transition_matrix(N, K, q, context_prob, p, n_actions = 2):
     """

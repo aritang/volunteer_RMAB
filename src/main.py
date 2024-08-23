@@ -10,8 +10,6 @@ from pathlib import Path
 import matplotlib.pyplot as plt
 
 from volunteer_simulator import Volunteer_RMABSimulator, randomly_generate_transitions
-# from uc_whittle import UCWhittle
-# from ucw_value import UCWhittle_value
 from volunteer_algorithms import whittle_policy , random_policy, whittle_policy_type_specific #, WIQL
 from instance_generator import InstanceGenerator
 from brute_search_budget_allocation import brute_force_search
@@ -131,9 +129,11 @@ if __name__ == '__main__':
     # -------------------------------------------------
     # run comparisons
     # -------------------------------------------------
-    use_algos = ['whittle', 'random', 'type_specific'] 
+    use_algos = ['whittle', 'random', 'type_specific']
+    args.use_algos = use_algos 
 
     rewards  = {}
+    rewards_to_write = {}
     runtimes = {}
     # colors   = {'whittle': 'purple', 'ucw_value': 'b', 'ucw_qp': 'c', 'ucw_qp_min': 'goldenrod', 'ucw_ucb': 'darkorange',
     #             'ucw_extreme': 'r', 'wiql': 'limegreen', 'random': 'brown', 'type_specific' : 'goldenrod'}
@@ -144,6 +144,7 @@ if __name__ == '__main__':
         start                 = time.time()
         rewards['whittle']    = whittle_policy(simulator, n_episodes, n_epochs, discount)
         print(np.mean(rewards['whittle']))
+        rewards_to_write['whittle'] = np.mean(rewards['whittle'])
         runtimes['whittle']   = time.time() - start
         print('-------------------------------------------------')
 
@@ -155,6 +156,7 @@ if __name__ == '__main__':
         rewards['random']      = random_policy(simulator, n_episodes, n_epochs)
         runtimes['random']     = time.time() - start
         print(np.mean(rewards['random']))
+        rewards_to_write['random'] = np.mean(rewards['random'])
         print('-------------------------------------------------')
 
     if 'type_specific' in use_algos: # type-specific whittle policy
@@ -173,6 +175,7 @@ if __name__ == '__main__':
         best_allocation = max(results, key=results.get)
         print(f"Budget Allocation: {best_allocation}, Reward: {results[best_allocation]}")
         rewards['type_specific']      = whittle_policy_type_specific(simulator, best_allocation, n_episodes, n_epochs, discount)
+        rewards_to_write['type_specific'] = np.mean(rewards['type_specific'])
         runtimes['type_specific']     = time.time() - start
         print('-------------------------------------------------')
 
@@ -188,10 +191,8 @@ if __name__ == '__main__':
     #     cum_sum = cum_sum / (x_vals + 1)
     #     return smooth(cum_sum)
 
-
-    
-
-    write_result(rewards, use_algos, args, all_transitions, context_prob)
+    p, q, _ = generator.get_original_vectors(all_transitions, context_prob)
+    write_result(rewards, use_algos, args, all_transitions, context_prob, p, q, rewards_to_write, best_allocation)
 
     # -------------------------------------------------
     # visualize

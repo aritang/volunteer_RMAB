@@ -38,7 +38,7 @@ def save_rewards(rewards, use_algos, args, this_path):
     return file_list, file_desciptions
 
 
-def write_result(rewards, use_algos, args, transition_probabilities, context_prob):
+def write_result(rewards, use_algos, args, transition_probabilities, context_prob, p, q, rewards_to_write, best_allocation = None):
     # do two jobs: 
     # first, create a folder to store all the results
     # folder is just experiment time
@@ -54,12 +54,21 @@ def write_result(rewards, use_algos, args, transition_probabilities, context_pro
     # (2) description
 
     # lastly, save the json file of all the parameters 
-
     file_list, file_descriptions = save_rewards(rewards = rewards, use_algos = use_algos, args = args, this_path=this_path)
-
     args_dict = vars(args)
-    args_dict["transition_probabilities"] = transition_probabilities.tolist()
+    
+    if args.homogeneous == True:
+        args_dict["p"] = p[0].tolist()
+        args_dict["q"] = q[0].tolist()
+    else:
+        args_dict["p"] = p.tolist()
+        args_dict["q"] = q.tolist()
     args_dict["context_prob"] = context_prob.tolist()
+    args_dict["rewards"] = rewards_to_write
+
+    args_dict["transition_probabilities"] = transition_probabilities.tolist()
+    args_dict["best_allocation"] = np.array(best_allocation).tolist()
+
     for file_name, file_description in zip(file_list, file_descriptions):
         args_dict[file_name] = file_description
     # Serialize dictionary to JSON
