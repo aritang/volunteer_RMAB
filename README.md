@@ -18,13 +18,17 @@ This code implements and evaluates algorithms for our global-context volunteer R
 
 - (**algorithm**)`brute_search_budget_allocation.py` - search for optimal budget, given input parameters.
 
+    f[k] probability of context
+
+    sum_k f[k]B[k] <= B
+
 - (**algorithm**) `volunteer_algorithms.py` - implementing algorithms that interact with environment 
 
     `whittle`: (under hard budget constraint) choose top-B arms.
 
     `random`: (under hard budget constraint) randomly choose $B$ arms to pull.
 
-    `whittle_policy_type_specific()`, take `type_specific_budget` as input and choose top-B arms
+    `whittle_policy_type_specific()`, take `type_specific_budget` as input and choose top-B[k] arms.
 
 - (*auxiliary*)`volunteer_compute_whittle.py` - compute Whittle index for Whittle index threshold policy
 
