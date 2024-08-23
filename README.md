@@ -2,9 +2,21 @@
 
 This code implements and evaluates algorithms for our global-context volunteer RMAB model.
 
+Results are stored in folders in `results` folder. Every date-time folder is a run of experiment on a certain instance. All parameters and run results (rewards for different policies) are stored in `param_whatever.json` files. Plottings are in `figures` folder.
+
 ## Files
 
-- `main.py` - main driver
+- `main.py` - main driver. Run
+
+    ```bash
+     python main.py --seed 313 -B 4 -N 20 -K 3 -HOMO true
+    ```
+
+- `load_to_run.py`. Load local `.json` parameter file to run an instance.
+
+    ```bash
+    python load_to_run.py results/19-08-2024_12:53:31/param_settings.json
+    ```
 
 - (auxiliary) `instance_generator.py` - initialize with `N`, `K` and generate transition probability and task-occuring probabilities with a fix seed. (for experiment consistency). Data stored in file 'data'.
 
