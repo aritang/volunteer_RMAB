@@ -47,7 +47,8 @@ if __name__ == '__main__':
 
     # parser.add_argument('--n_states',       '-S', help='num states', type=int, default=2)
     parser.add_argument('--n_actions',      '-A', help='num actions', type=int, default=2)
-    parser.add_argument('--homogeneous',      '-HOMO', help='if homogenous', type=bool, default=True)
+    # special treatment
+    parser.add_argument('--homogeneous', '-HOMO', help='if homogenous', type=str, default='True')
     parser.add_argument('--seed',           '-s', help='random seed', type=int, default=42)
     parser.add_argument('--verbose',        '-V', type=bool, help='if True, then verbose output (default False)', default=False)
     parser.add_argument('--local',          '-L', help='if True, running locally (default False)', action='store_true')
@@ -55,6 +56,8 @@ if __name__ == '__main__':
 
 
     args = parser.parse_args()
+    # special treatement
+    args.homogeneous = args.homogeneous.lower() in ['true', '1', 'yes']
 
 
     # problem setup

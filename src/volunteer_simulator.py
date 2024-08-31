@@ -176,13 +176,15 @@ class Volunteer_RMABSimulator(gym.Env):
         # print(f'  action {action}, sum {action.sum()}, reward {reward}')
 
         return self.observe(), reward, done, {}
+    
     def get_reward_external(self):
         return self.reward
     
     def get_original_vectors(self):
         """
         input: all prob. matrices
-        job: get p, q, f and preview the parameters
+
+        return: p, q, f and preview the parameters
         """
         p = np.zeros((self.N, self.K))
         q = np.zeros(self.N)

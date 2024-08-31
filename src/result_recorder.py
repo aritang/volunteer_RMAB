@@ -54,8 +54,13 @@ def write_result(rewards, use_algos, args, transition_probabilities, context_pro
     # (2) description
 
     # lastly, save the json file of all the parameters 
-    file_list, file_descriptions = save_rewards(rewards = rewards, use_algos = use_algos, args = args, this_path=this_path)
-    args_dict = vars(args)
+    if rewards == None:
+        args_dict = vars(args)
+    else:
+        file_list, file_descriptions = save_rewards(rewards = rewards, use_algos = use_algos, args = args, this_path=this_path)
+        args_dict = vars(args)
+        for file_name, file_description in zip(file_list, file_descriptions):
+            args_dict[file_name] = file_description
     
     if args.homogeneous == True:
         args_dict["p"] = p[0].tolist()
@@ -69,8 +74,6 @@ def write_result(rewards, use_algos, args, transition_probabilities, context_pro
     args_dict["transition_probabilities"] = transition_probabilities.tolist()
     args_dict["best_allocation"] = np.array(best_allocation).tolist()
 
-    for file_name, file_description in zip(file_list, file_descriptions):
-        args_dict[file_name] = file_description
     # Serialize dictionary to JSON
     json_filename = this_path + '/param_settings.json'
     with open(json_filename, 'w') as json_file:
