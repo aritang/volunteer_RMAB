@@ -314,7 +314,6 @@ if __name__ == '__main__':
     rewards = brute_force_plot(simulator)
     
     plot_type_tuple(rewards, context_prob=context_prob, args=args)
-    
 
     opt_value, best_allocation = solve_budget(simulator)
     print(f"LP directly solved budget allocation = {best_allocation}\n opt_val = {opt_value}")

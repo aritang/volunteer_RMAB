@@ -1,6 +1,5 @@
 import numpy as np
 
-
 class Memoizer:
     """ improve performance of memoizing solutions (to QP and WI value iteration) """
     def __init__(self, method):

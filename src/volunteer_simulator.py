@@ -276,6 +276,7 @@ def randomly_generate_transitions(N, K, homogeneous = True):
     all_transitions = construct_volunteer_transition_matrix(N, K, q = q, context_prob=context_prob, p = p)
     return all_transitions, context_prob
 
+
 '''
 Testing the functionality of the simulator
 '''
