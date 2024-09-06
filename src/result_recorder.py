@@ -56,6 +56,9 @@ def write_result(rewards, use_algos, args, transition_probabilities, context_pro
     # lastly, save the json file of all the parameters 
     if rewards == None:
         args_dict = vars(args)
+    elif 'MIP_Solving_Budget' in use_algos or 'LP_Solving_Budget' in use_algos:
+        args_dict = vars(args)
+        args_dict['reward_LP_MIP'] = rewards
     else:
         file_list, file_descriptions = save_rewards(rewards = rewards, use_algos = use_algos, args = args, this_path=this_path)
         args_dict = vars(args)

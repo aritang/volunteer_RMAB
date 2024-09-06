@@ -24,10 +24,10 @@ def get_cum_sum(reward):
 
 def plot_rewards(rewards, use_algos, args, colors = colors):
     # plot average cumulative reward
-    this_path = f'./figures/{args.str_time}'
+    this_path = f'./results/{args.str_time}'
 
-    if not os.path.exists(f'./figures/{args.str_time}'):
-        os.makedirs(f'./figures/{args.str_time}')
+    if not os.path.exists(f'./results/{args.str_time}'):
+        os.makedirs(f'./results/{args.str_time}')
     
     plt.figure()
     for algo in use_algos:
@@ -47,7 +47,7 @@ def plot_rewards(rewards, use_algos, args, colors = colors):
     plt.xlabel(f'timestep $t$ ({args.n_episodes} episodes of length {args.episode_len})')
     plt.ylabel('average reward')
     plt.title(f'{args.data} - N={args.n_arms}, budget={args.budget}, discount={args.discount}, {args.n_epochs} epochs')
-    # plt.savefig(f'figures/{args.data}/avg_reward_{args.exp_name_out}_{args.str_time}.pdf')
+    # plt.savefig(f'results/{args.data}/avg_reward_{args.exp_name_out}_{args.str_time}.pdf')
     plt.savefig(this_path + f'/avg_reward_{args.exp_name_out}.pdf')
 
 import numpy as np
@@ -67,10 +67,10 @@ def plot_type_tuple(reward, context_prob, args):
     """
     n = len(context_prob)  # Number of contexts
     fig, axes = plt.subplots(n, n, figsize=(15, 15))
-    this_path = f'./figures/{args.str_time}'
+    this_path = f'./results/{args.str_time}'
 
-    if not os.path.exists(f'./figures/{args.str_time}'):
-        os.makedirs(f'./figures/{args.str_time}')
+    if not os.path.exists(f'./results/{args.str_time}'):
+        os.makedirs(f'./results/{args.str_time}')
 
     for i in range(n):
         for j in range(n):
