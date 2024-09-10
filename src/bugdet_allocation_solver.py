@@ -216,7 +216,7 @@ class BudgetSolver:
 
 def solve_budget(simulator, MIP):
     p, q, context_prob = simulator.get_original_vectors()
-    print("parameters(p, q, f)\n", p[0], q[0], context_prob)
+    # print("parameters(p, q, f)\n", p[0], q[0], context_prob)
 
     # simple solver
     # SimpleLPSolver = SimpleLP(N = simulator.N, K = simulator.K, p = p, w = simulator.reward_vector, f=context_prob, B = simulator.budget, q = q)
@@ -258,7 +258,6 @@ def brute_force_plot(simulator, verbose=False):
                 results[tuple(budget_vector_np)] = pulp.value(BudgetLPSolver.model.objective)
         # print(f"\nreward = {np.mean(rewards)}\nbudget = {budget_vector_np}")
     return results
-
 
 if __name__ == '__main__':
 

@@ -38,15 +38,16 @@ def save_rewards(rewards, use_algos, args, this_path):
     return file_list, file_desciptions
 
 
-def write_result(rewards, use_algos, args, transition_probabilities, context_prob, p, q, rewards_to_write, best_allocation = None):
+def write_result(rewards, use_algos, args, transition_probabilities, context_prob, p, q, rewards_to_write, best_allocation = None, result_name = ""):
     # do two jobs: 
     # first, create a folder to store all the results
     # folder is just experiment time
-    if not os.path.exists(f'./results/{args.str_time}'):
-        os.makedirs(f'./results/{args.str_time}')
+    this_path = f'./results/{args.str_time}' + result_name
+
+    if not os.path.exists(this_path):
+        os.makedirs(this_path)
 
     # everything will be saved under this directory
-    this_path = f'./results/{args.str_time}'
 
     # then
     # save any kinds of results (call functions that do the job), for the saved results, need two parameters:
@@ -82,3 +83,37 @@ def write_result(rewards, use_algos, args, transition_probabilities, context_pro
     with open(json_filename, 'w') as json_file:
         json.dump(args_dict, json_file, indent=4)
 
+def MIP_n_SIM_write_result(MIP_rewards, SIM_rewards, args, all_transitions, context_prob, p, q, result_name = ""):
+
+    this_path = f'./results/{args.str_time}' + result_name
+
+    if not os.path.exists(this_path):
+        os.makedirs(this_path)
+
+    args_dict = {}
+    args_dict = vars(args)
+
+    MIP_rewards_valid = {}
+    for key in MIP_rewards.keys():
+        MIP_rewards_valid[str(key)] = MIP_rewards[key]
+    args_dict['MIP_rewards'] = MIP_rewards_valid
+
+    SIM_rewards_valid = {}
+    for key in SIM_rewards.keys():
+        SIM_rewards_valid[str(key)] = SIM_rewards[key]
+    args_dict['SIM_rewards'] = SIM_rewards_valid
+
+    args_dict["context_prob"] = context_prob.tolist()
+
+    if args.homogeneous == True:
+        args_dict["p"] = p[0].tolist()
+        args_dict["q"] = q[0].tolist()
+    else:
+        args_dict["p"] = p.tolist()
+        args_dict["q"] = q.tolist()
+
+    args_dict["transition_probabilities"] = all_transitions.tolist()
+
+    json_filename = this_path + '/param_settings.json'
+    with open(json_filename, 'w') as json_file:
+        json.dump(args_dict, json_file, indent=4)

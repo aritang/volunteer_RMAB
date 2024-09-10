@@ -157,11 +157,13 @@ class InstanceGenerator:
         Return
         """
         instances = []
-        self.data_dir = self.data_dir.removeprefix(f'N_{N}_K_{K}_seed_{seed}')
-        self.data_dir = os.path.join(self.data_dir, f'N_{N}_K_{K}_NAME_{name}')
+        self.data_dir = self.data_dir.removeprefix(f'data/N_{N}_K_{K}_seed_{seed}')
+        self.data_dir = os.path.join(f'data/N_{N}_K_{K}_NAME_{name}', self.data_dir)
+        print(f"in generate_instance_given_probs() data_dir = {self.data_dir}")
         for m in range(M):
             transitions = self.construct_volunteer_transition_matrix(N=self.N, K=self.K, q = q, context_prob=context_prob, p = p)
             instance_dir = os.path.join(self.data_dir, f'N_{N}_K_{K}_NAME_{name}_num_{m}')
+            print(f"in generate_instance_given_probs() instance-dir = {instance_dir}")
             if not os.path.exists(instance_dir):
                 os.makedirs(instance_dir)
             

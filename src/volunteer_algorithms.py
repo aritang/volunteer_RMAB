@@ -108,6 +108,7 @@ def whittle_policy_type_specific(env, type_specific_budget, n_episodes=1, n_epoc
     similarly:
     return reward where reward.shape = ((n_epochs, env.T * n_episodes + 1))
     """
+    env.constraint_type = "soft"
     N         = env.N
     n_states  = env.number_states
     n_actions = env.all_transitions.shape[2]

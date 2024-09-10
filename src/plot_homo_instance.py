@@ -44,7 +44,7 @@ if __name__ == '__main__':
     parser.add_argument('--n_episodes',     '-T', help='num episodes', type=int, default=6)
     parser.add_argument('--data',           '-D', help='dataset to use {synthetic, real, local_generated}', type=str, default='local_generated')
 
-    parser.add_argument('--n_epochs',       '-E', help='number of epochs (num_repeats)', type=int, default=6)
+    parser.add_argument('--n_epochs',       '-E', help='number of epochs (num_repeats)', type=int, default=20)
     parser.add_argument('--discount',       '-d', help='discount factor', type=float, default=0.98)
 
     # doesn't seem necessary
@@ -107,16 +107,16 @@ if __name__ == '__main__':
     MIP_result = np.zeros(TIMES)
     NumSim_result = np.zeros(TIMES)
     MIP_budget = dict()
-
+    known_best_budget = [14, 0, 7]
     for TIME in np.arange(1, TIMES + 1):
         N_now = N*TIME
         budget_now = budget*TIME
 
         if data == 'local_generated':
             all_population_size = N_now
-            print('using locally generated data w.r.t. a seed that fixing everything')
+            # print('using locally generated data w.r.t. a seed that fixing everything')
             # generate local data using a same seed—if N, K be the same, generated probability transitions should also be the same
-            generator = InstanceGenerator(N=N, K=K, seed=seed)
+            generator = InstanceGenerator(N=N_now, K=K, seed=seed)
             # let's say we only support one instance for now
             num_instances = 1
             generator.generate_instances(num_instances, homogeneous=homogeneous)
@@ -144,11 +144,21 @@ if __name__ == '__main__':
         opt_value, best_allocation = solve_budget(simulator, MIP=True)
         # print(f"--> LP  directly solved budget allocation = {best_allocation}\n opt_val = {opt_value}")
         # rewards[tuple(best_allocation.tolist())] = opt_value
-        MIP_result[TIME] = opt_value
-        MIP_budget[TIME] = best_allocation.tolist()
+        MIP_result[TIME-1] = opt_value/N_now
+        MIP_budget[TIME-1] = best_allocation.tolist()
+
+        # best_allocation = np.array(best_allocation, dtype=int)
+        best_allocation = np.array(known_best_budget, dtype=int)*TIME
 
         rewards = whittle_policy_type_specific(simulator, best_allocation, n_episodes=n_episodes, n_epochs=n_epochs, discount=discount)
-        NumSim_result[TIME] = np.mean(rewards)
+        NumSim_result[TIME-1] = np.mean(rewards)/N_now
 
-    sns.lineplot(MIP_result, label = "MIP result")
-    sns.lineplot(NumSim_result, label = "NumSim result")
+        print(f"---------------------\nN = {N_now}, B = {budget_now}\nB_alloc = {best_allocation}\nSIM_reward={NumSim_result[TIME - 1]}, MIP_reward={MIP_result[TIME - 1]}")
+
+    N_list = np.arange(1, TIMES + 1)*N
+    sns.lineplot(x = N_list, y = MIP_result, label = "MIP result")
+    sns.lineplot(x = N_list, y = NumSim_result, label = "NumSim result")
+    plt.title(f"alpha (N/K) = {N/budget}")
+    plt.xlabel(f"N")
+    plt.ylabel(f"reward/(N*T) ")
+    plt.show()

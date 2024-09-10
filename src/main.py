@@ -196,7 +196,6 @@ if __name__ == '__main__':
 
     p, q, _ = generator.get_original_vectors(all_transitions, context_prob)
     write_result(rewards, use_algos, args, all_transitions, context_prob, p, q, rewards_to_write, best_allocation)
-
     # -------------------------------------------------
     # visualize
     # -------------------------------------------------
