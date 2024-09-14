@@ -98,10 +98,17 @@ def MIP_n_SIM_write_result(MIP_rewards, SIM_rewards, args, all_transitions, cont
         MIP_rewards_valid[str(key)] = MIP_rewards[key]
     args_dict['MIP_rewards'] = MIP_rewards_valid
 
+    best_allocation = max(MIP_rewards, key=MIP_rewards.get)
+    args_dict['MIP_opt_rewards'] = (MIP_rewards[best_allocation])
+    args_dict['MIP_opt_budget'] = best_allocation
+
     SIM_rewards_valid = {}
     for key in SIM_rewards.keys():
         SIM_rewards_valid[str(key)] = SIM_rewards[key]
     args_dict['SIM_rewards'] = SIM_rewards_valid
+    best_allocation = max(SIM_rewards, key=SIM_rewards.get)
+    args_dict['SIM_opt_rewards'] = SIM_rewards[best_allocation]
+    args_dict['SIM_opt_budget'] = best_allocation
 
     args_dict["context_prob"] = context_prob.tolist()
 
@@ -116,4 +123,4 @@ def MIP_n_SIM_write_result(MIP_rewards, SIM_rewards, args, all_transitions, cont
 
     json_filename = this_path + '/param_settings.json'
     with open(json_filename, 'w') as json_file:
-        json.dump(args_dict, json_file, indent=4)
+        json.dump(args_dict, json_file, indent=4, default=str)

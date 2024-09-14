@@ -21,10 +21,10 @@ if __name__ == '__main__':
 
     parser = argparse.ArgumentParser()
     parser.add_argument('--n_arms',         '-N', help='num beneficiaries (arms)', type=int, default=60)
-    parser.add_argument('--budget',         '-B', help='budget', type=int, default=20)
+    parser.add_argument('--budget',         '-B', help='budget', type=int, default=5)
     parser.add_argument('--num_context',    '-K', help='context_size', type=int, default='2')
 
-    parser.add_argument('--episode_len',    '-H', help='episode length', type=int, default=666)
+    parser.add_argument('--episode_len',    '-H', help='episode length', type=int, default=600)
     parser.add_argument('--n_episodes',     '-T', help='num episodes', type=int, default=6)
     parser.add_argument('--data',           '-D', help='dataset to use {synthetic, real, local_generated}', type=str, default='local_generated')
 

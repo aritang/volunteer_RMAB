@@ -23,72 +23,6 @@ import pulp
 solver = pulp.getSolver('GUROBI')
 pulp.LpSolverDefault.msg = 0
 
-# class SimpleLP:
-#     """
-#     Solve for individual arm, objective multiplied by N
-#     """
-#     def __init__(self, N, K, p, w, f, B, q):
-#         self.N = N  # Number of arms
-#         self.K = K  # Number of decision variables
-#         self.p = p  # Profit coefficients
-#         self.w = w  # weight of each type
-#         self.f = f  # Upper limit factors for z
-#         self.B = B  # Total budget
-#         self.q = q  # Coefficient in the recovery link constraint
-#         self.alpha = B / N  # Alpha as per the budget per arm
-        
-
-#         # Initialize the LP model
-#         self.model = pulp.LpProblem("SimpleLP_individual_volunteer_Whittle_Policy", pulp.LpMaximize)
-#         self.z = pulp.LpVariable.dicts("z", range(K + 1), lowBound=0)
-
-#         # Objective function
-#         self.model += N * pulp.lpSum([self.p[k]*self.w[k]*self.z[k+1] for k in range(K)]), "Objective"        
-
-#         # Constraints
-#         self.model += pulp.lpSum([self.z[k+1] for k in range(K)]) <= self.alpha, "Budget_Constraint"
-#         self.model += pulp.lpSum([self.p[k]*self.z[k+1] for k in range(K)]) == self.q * self.z[0], "Recovery_Link"
-#         for k in range(K):
-#             self.model += self.z[k + 1] <= self.f[k] * (1 - self.z[0]), "Limit_z" + str(k + 1)
-
-#         self.IF_solved = False
-
-#     def solve(self):
-#         # Solve the LP problem
-#         self.model.solve()
-#         if pulp.LpStatus[self.model.status] == pulp.LpStatus[1]:
-#             self.IF_solved = True
-
-#         self.z_solved = np.zeros(self.K + 1)
-#         for k in range(self.K + 1):
-#             self.z_solved[k] = pulp.value(self.z[k])
-#         # print(f"Optimal value for individual Whittle Policy: {pulp.value(self.model.objective)}")
-
-#     def check_result(self):
-#         # Retrieve the optimal z values and calculate sigma_k
-#         # print("simple LP status", pulp.LpStatus[self.model.status])
-#         if self.IF_solved:
-#             # print("Model status: Optimal")
-#             # print("Individual arm results:")
-#             # print(f"Optimal value: {pulp.value(self.model.objective)}")
-        
-#             self.sigma = np.zeros(self.K)
-#             for k in range(self.K):
-#                 self.sigma[k] = pulp.value((self.z[k + 1]))/(self.f[k] * (1 - pulp.value(self.z[0]))) if self.f[k] * (1 - pulp.value(self.z[0])) > 1e-6 else 0
-#             print(f"sigma = {self.sigma}\n\n")
-#             return self.sigma
-#         else:
-#             print("No optimal solution found")
-#             return [0] * self.K
-        
-#     def get_budget_allocation(self):
-#         if not self.IF_solved:
-#             self.solve()
-
-#         print(self.z_solved)
-#         budget_allocation = self.z_solved[1:]/np.sum(self.z_solved[1:])*self.B
-#         return budget_allocation
-
 def get_original_vectors(all_transitions, context_prob):
     """
     input: all prob. matrices
@@ -99,7 +33,10 @@ def get_original_vectors(all_transitions, context_prob):
     q = np.zeros(N)
 
     for i in range(N):
-        q[i] = np.sum(all_transitions[i, 0, :, 1::2])
+        # crucial change made here
+        # previously 
+        # q[i] = np.sum(all_transitions[i, 0, :, 1::2])
+        q[i] = np.sum(all_transitions[i, 0, 0, 1::2])
         for k in range(K):
             p[i, k] = np.sum(all_transitions[i, k*2 + 1, 1, ::2])
     return p, q, context_prob
@@ -228,13 +165,17 @@ def solve_budget(simulator, MIP):
     BudgetLPSolver.solve()
     # BudgetLPSolver.report_result()
     return pulp.value(BudgetLPSolver.model.objective), BudgetLPSolver.get_budget_allocation()
-    
+
 def brute_force_plot(simulator, verbose=False):
+    """
+    input simulator
+    solve using MIP to obtain the results dict w.r.t. budgets
+    """
     p, q, context_prob = simulator.get_original_vectors()
     if verbose:
         print("parameters(p, q, f)\n", p[0], q[0], context_prob)
     
-    BudgetLPSolver = BudgetSolver(N=simulator.N, K=simulator.K, B = simulator.budget, all_transitions=simulator.all_transitions, context_prob=context_prob, MIP = True)
+    BudgetLPSolver = BudgetSolver(N=simulator.N, K=simulator.K, B = simulator.budget, all_transitions=simulator.all_transitions, context_prob=context_prob, MIP = False)
 
     B = simulator.budget
     K = simulator.K

@@ -34,6 +34,7 @@ class InstanceGenerator:
             instances.append(instance)
             self.save_instance(instance, instance_dir)
 
+
     def save_instance(self, instance, instance_dir):
         file_path = os.path.join(instance_dir, 'instance_data.json')
         with open(file_path, 'w') as f:
@@ -122,7 +123,7 @@ class InstanceGenerator:
         q = np.zeros(self.N)
 
         for i in range(self.N):
-            q[i] = np.sum(all_transitions[i, 0, :, 1::2])
+            q[i] = np.sum(all_transitions[i, 0, 0, 1::2])
             for k in range(self.K):
                 p[i, k] = np.sum(all_transitions[i, k*2 + 1, 1, ::2])
         
@@ -140,7 +141,9 @@ class InstanceGenerator:
         q = np.zeros(self.N)
 
         for i in range(self.N):
-            q[i] = np.sum(all_transitions[i, 0, :, 1::2])
+            # wrong version:
+            # q[i] = np.sum(all_transitions[i, 0, :, 1::2])
+            q[i] = np.sum(all_transitions[i, 0, 0, 1::2])
             for k in range(self.K):
                 p[i, k] = np.sum(all_transitions[i, k*2 + 1, 1, ::2])
 
@@ -156,6 +159,9 @@ class InstanceGenerator:
             -> n_states = 2*K
         Return
         """
+        N = self.N
+        K = self.K
+        seed = self.seed
         instances = []
         self.data_dir = self.data_dir.removeprefix(f'data/N_{N}_K_{K}_seed_{seed}')
         self.data_dir = os.path.join(f'data/N_{N}_K_{K}_NAME_{name}', self.data_dir)
@@ -176,6 +182,19 @@ class InstanceGenerator:
 
 
 if __name__ == '__main__':
+
+    # sanity check for generated instances:
+    print("---- sanity check for instance generation: if q is correct ----")
+    N = 25
+    seed = 43
+    B = 5
+    K = 3
+    generator = InstanceGenerator(N=N, K=K, seed=seed)
+    generator.generate_instances()
+    instance = generator.load_instance()
+    all_transitions, context_prob = instance['transitions'], instance['context_prob']
+    p, q, _ = generator.get_original_vectors(all_transitions, context_prob)
+    print(f"p[0] = {p[0]}, q[0] = {q[0]}")
 
     # this part works
     print("---- sanity check for random method ----")
@@ -225,6 +244,8 @@ if __name__ == '__main__':
 
     # Simulation part using loaded instance
     all_transitions, context_prob = instance['transitions'], instance['context_prob']
+    p, q, _ = generator.get_original_vectors(all_transitions, context_prob)
+    print("p, q = ", p, q)
     T = 100
     budget = 5
     reward_vector = np.ones(K)

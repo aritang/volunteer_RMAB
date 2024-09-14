@@ -61,7 +61,6 @@ def initialize_simulator(args):
     simulator = Volunteer_RMABSimulator(N=args.n_arms, K=args.num_context, T=args.episode_len, context_prob=context_prob, all_transitions=all_transitions, budget=args.budget, reward_vector=reward_vector)
     return simulator, context_prob
 
-
 def brute_force_search(simulator, n_episodes, n_epochs, discount):
     context_prob = simulator.context_prob
     B = simulator.budget
@@ -82,6 +81,45 @@ def brute_force_search(simulator, n_episodes, n_epochs, discount):
                 rewards = whittle_policy_type_specific(simulator, budget_vector_np, n_episodes=n_episodes, n_epochs=n_epochs, discount=discount)
                 print(f"B = {budget_vector_np}, reward = {np.mean(rewards)}")
                 results[tuple(budget_vector_np)] = np.mean(rewards)
+        # print(f"\nreward = {np.mean(rewards)}\nbudget = {budget_vector_np}")
+    return results
+
+def brute_force_search_wrt_allowance(simulator, n_episodes, n_epochs, discount, benchmark_rewards, eps_allowance):
+    """
+    similar to brute_force_search(...) -> return dict results
+    only difference is that only benchmark_rewards[budget] - optimal_rewards_in_benchmark < eps_allowance * range would be runned. hence saving time
+    """
+    best_allocation = max(benchmark_rewards, key=benchmark_rewards.get)
+    max_benchmark_reward = benchmark_rewards[best_allocation]
+    worst_allocation = min(benchmark_rewards, key=benchmark_rewards.get)
+    min_benchmark_rewards = benchmark_rewards[worst_allocation]
+    benchmark_range = max_benchmark_reward - min_benchmark_rewards
+    allowance = benchmark_range*eps_allowance
+    threshold_of_run = max_benchmark_reward - allowance
+    print(f"min_benchmark_rewards, max_benchmark_reward, threshold_of_run = {min_benchmark_rewards, max_benchmark_reward, threshold_of_run}")
+
+    context_prob = simulator.context_prob
+    B = simulator.budget
+    K = simulator.K
+    B_UB = [B / prob for prob in context_prob]
+    
+    results = {}
+    
+    for budget_vector in itertools.product(*(range(int(b_ub)+1) for b_ub in B_UB[:-1])):
+        
+        budget_vector_np = np.zeros(K, dtype=int)
+        budget_vector_np[:-1] = budget_vector
+        if sum(np.multiply(context_prob[:-1], budget_vector_np[:-1])) <= B:
+            remaining_budget = B - sum(np.multiply(context_prob[:-1], budget_vector_np[:-1]))
+            budget_vector_np[-1] = int(remaining_budget / context_prob[-1])
+            if sum(np.multiply(context_prob, budget_vector_np)) <= B:
+                # run is here
+                if benchmark_rewards[tuple(budget_vector_np)] >= threshold_of_run:
+                    rewards = whittle_policy_type_specific(simulator, budget_vector_np, n_episodes=n_episodes, n_epochs=n_epochs, discount=discount)
+                    # print(f"B = {budget_vector_np}, reward = {np.mean(rewards)}")
+                    results[tuple(budget_vector_np)] = np.mean(rewards)
+                else:
+                    results[tuple(budget_vector_np)] = 0
         # print(f"\nreward = {np.mean(rewards)}\nbudget = {budget_vector_np}")
     return results
 

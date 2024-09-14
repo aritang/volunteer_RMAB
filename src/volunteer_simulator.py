@@ -190,7 +190,7 @@ class Volunteer_RMABSimulator(gym.Env):
         q = np.zeros(self.N)
 
         for i in range(self.N):
-            q[i] = np.sum(self.all_transitions[i, 0, :, 1::2])
+            q[i] = np.sum(self.all_transitions[i, 0, 0, 1::2])
             for k in range(self.K):
                 p[i, k] = np.sum(self.all_transitions[i, k*2 + 1, 1, ::2])
         return p, q, self.context_prob

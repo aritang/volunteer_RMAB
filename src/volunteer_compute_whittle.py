@@ -89,14 +89,13 @@ def arm_compute_whittle(transitions, state, reward_vector, discount, subsidy_bre
             return -10
 
         action = arm_value_iteration(transitions, state, lamb_val, discount, reward_vector)
+        assert action == 0 or action == 1, "action is not binary"
         if action == 0:
             # optimal action is passive: subsidy is too high
             ub = lamb_val
         elif action == 1:
             # optimal action is active: subsidy is too low
             lb = lamb_val
-        else:
-            raise Error(f'action not binary: {action}')
     subsidy = (ub + lb) / 2
     return subsidy
 
