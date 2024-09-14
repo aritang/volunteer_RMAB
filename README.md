@@ -4,6 +4,8 @@ This code implements and evaluates algorithms for our global-context volunteer R
 
 Results are stored in folders in `results` folder. Every date-time folder is a run of experiment on a certain instance. All parameters and run results (rewards for different policies) are stored in `param_whatever.json` files. Plottings are in `figures` folder.
 
+## Maths
+
 ## Files
 
 - `main.py` - main driver. Run
