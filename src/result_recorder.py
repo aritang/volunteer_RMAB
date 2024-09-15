@@ -124,3 +124,47 @@ def MIP_n_SIM_write_result(MIP_rewards, SIM_rewards, args, all_transitions, cont
     json_filename = this_path + '/param_settings.json'
     with open(json_filename, 'w') as json_file:
         json.dump(args_dict, json_file, indent=4, default=str)
+
+
+def LDS_n_SIM_write_result(LDS_rewards, SIM_rewards, args, all_transitions, context_prob, p, q, result_name = ""):
+
+    this_path = f'./results/{args.str_time}' + result_name
+
+    if not os.path.exists(this_path):
+        os.makedirs(this_path)
+
+    args_dict = {}
+    args_dict = vars(args)
+
+    MIP_rewards_valid = {}
+    for key in LDS_rewards.keys():
+        MIP_rewards_valid[str(key)] = LDS_rewards[key]
+    args_dict['LDS_rewards'] = MIP_rewards_valid
+
+    best_allocation = max(LDS_rewards, key=LDS_rewards.get)
+    args_dict['LDS_opt_rewards'] = (LDS_rewards[best_allocation])
+    args_dict['LDS_opt_budget'] = best_allocation
+
+    SIM_rewards_valid = {}
+    for key in SIM_rewards.keys():
+        SIM_rewards_valid[str(key)] = SIM_rewards[key]
+    args_dict['SIM_rewards'] = SIM_rewards_valid
+    best_allocation = max(SIM_rewards, key=SIM_rewards.get)
+    args_dict['SIM_opt_rewards'] = SIM_rewards[best_allocation]
+    args_dict['SIM_opt_budget'] = best_allocation
+
+    args_dict["context_prob"] = context_prob.tolist()
+
+    if args.homogeneous == True:
+        args_dict["p"] = p[0].tolist()
+        args_dict["q"] = q[0].tolist()
+    else:
+        args_dict["p"] = p.tolist()
+        args_dict["q"] = q.tolist()
+
+    args_dict["transition_probabilities"] = all_transitions.tolist()
+
+    json_filename = this_path + '/param_settings.json'
+    with open(json_filename, 'w') as json_file:
+        json.dump(args_dict, json_file, indent=4, default=str)
+

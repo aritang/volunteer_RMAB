@@ -163,6 +163,52 @@ def MIP_n_SIM_plot_result(MIP_rewards, SIM_rewards, args, p, q, context_prob, re
     plt.tight_layout()
     plt.savefig(this_path + f'/budget_rewards-{args.exp_name_out}.pdf')
 
+    
+def LDS_n_SIM_plot_result(LDS_rewards, SIM_rewards, args, p, q, context_prob, result_name = ""):
+
+    n = len(context_prob)  # Number of contexts
+    fig, axes = plt.subplots(1, n, figsize=(n*5, 5))
+    this_path = f'./results/{args.str_time}' + result_name
+
+    # MIP reward:
+    reward = LDS_rewards
+    for i in range(n):
+        max_i = int(args.budget / context_prob[i])
+        rewards = np.full(max_i, -1.0)
+        for B_i in range(max_i):
+            max_reward = 0
+            for key, val in reward.items():
+                if len(key) > i and int(key[i]) == B_i:
+                    if val > max_reward:
+                        max_reward = val
+            rewards[B_i] = max_reward
+        ax = axes[i]
+        ax.plot(range(max_i), rewards, '-o', label = "LDS results")
+        ax.set_title(f'Total Rewards for context {i+1}')
+        ax.set_xlabel(f'Budget for context {i+1}')
+        ax.set_ylabel('Reward')
+
+    # MIP reward:
+    reward = SIM_rewards
+    for i in range(n):
+        max_i = int(args.budget / context_prob[i])
+        rewards = np.full(max_i, -1.0)
+        for B_i in range(max_i):
+            max_reward = 0
+            for key, val in reward.items():
+                if len(key) > i and int(key[i]) == B_i:
+                    if val > max_reward:
+                        max_reward = val
+            rewards[B_i] = max_reward
+        ax = axes[i]
+        ax.plot(range(max_i), rewards, '-', label = "SIM results")
+        ax.set_title(f'Total Rewards for context {i+1}')
+        ax.set_xlabel(f'Budget for context {i+1}')
+        ax.set_ylabel('Reward')
+    
+    plt.tight_layout()
+    plt.legend()
+    plt.savefig(this_path + f'/SIMvsLDS_budget_rewards-{args.exp_name_out}.pdf')
 
 
 if __name__ == "__main__":
