@@ -1,0 +1,7 @@
+// Branch and Bound Tree
+digraph {
+	1 [label="Node 1
+Depth: 0
+LP Value: 4.6763359881889945
+Oracle Value: 4.669508469869481"]
+}

@@ -85,8 +85,8 @@ if __name__ == '__main__':
     
     args.str_time = datetime.datetime.now().strftime('%d-%m-%Y_%H:%M:%S')
 
-    if not os.path.exists(f'figures/{data}'):
-        os.makedirs(f'figures/{data}')
+    # if not os.path.exists(f'figures/{data}'):
+    #     os.makedirs(f'figures/{data}')
 
     if not os.path.exists(f'results/{data}'):
         os.makedirs(f'results/{data}')

@@ -81,7 +81,7 @@ def write_result(rewards, use_algos, args, transition_probabilities, context_pro
     # Serialize dictionary to JSON
     json_filename = this_path + '/param_settings.json'
     with open(json_filename, 'w') as json_file:
-        json.dump(args_dict, json_file, indent=4)
+        json.dump(args_dict, json_file, indent=4, default=str)
 
 def MIP_n_SIM_write_result(MIP_rewards, SIM_rewards, args, all_transitions, context_prob, p, q, result_name = ""):
 

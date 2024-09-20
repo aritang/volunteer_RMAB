@@ -23,7 +23,6 @@ class Volunteer_RMABSimulator(gym.Env):
 
     This simulation now supports:
         - context-wise, potentially heterogeneous volunteers
-
     
     '''
 
