@@ -24,6 +24,8 @@ import numpy as np
 import random
 import heapq
 
+import logging
+
 from volunteer_simulator import Volunteer_RMABSimulator, randomly_generate_transitions
 from volunteer_compute_whittle import arm_compute_whittle, arm_compute_whittle_all_states
 from utils import Memoizer
@@ -194,12 +196,17 @@ def whittle_policy_type_specific(env, type_specific_budget, n_episodes=1, n_epoc
 
             # Select arms with highest Whittle indices up to the type-specific budget
             sorted_WI = np.argsort(state_WI)[::-1]
+            # logging.debug(f"Whittle Index: {state_WI}")
+            # logging.debug(f"states: {state}")
+            # logging.debug(f"sorted_WI: {sorted_WI}")
             action = np.zeros(N, dtype=np.int8)
             # Allocate actions based on type-specific budget
+            # logging.debug(f"budget to use now: {type_specific_budget[env.context]}")
             action[sorted_WI[:type_specific_budget[env.context]]] = 1
-
+            logging.debug(f"number of arms pulled at time {t}: {np.sum(action)}")
             # Take a step in the environment
             next_state, reward, done, _ = env.step(action)
+            logging.debug(f"step_wise reward at time {t}: {reward}")
 
             if done and t < T:
                 env.reset()

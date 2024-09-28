@@ -336,6 +336,37 @@ class InstanceGenerator:
             instances.append(instance)
             self.save_instance(instance, instance_dir)
 
+def initial_state_generator(n_epochs, N, K, seed, context_prob):
+    """
+    A class to generate and manage initial states for the Volunteer RMAB problem.
+
+    Args:
+        n_epochs (int): this number of states
+        K (int): Number of contexts.
+        N (int): Number of arms.
+        seed (int): Random seed for reproducibility.
+
+    Return:
+        a list initial_states_list: each element is (state, context) pair
+        each state is [N]-size numpy array (int)
+            states[i] = 2*k + 1 (active), 2*k (inactive)
+        each context is an int k
+
+    """
+    np.random.seed(seed)
+    random.seed(seed)
+
+    state_list = []
+    for i in range(n_epochs):
+        context = np.random.choice(a=K, p=context_prob)
+        states = np.random.choice(a=2, size = N, p = [0.5, 0.5])
+        states += 2*context
+        state_list.append((states, context))
+
+    return state_list
+
+
+
 if __name__ == '__main__':
     # Sanity check for generated instances
     print("---- Sanity check for instance generation: if q is correct ----")

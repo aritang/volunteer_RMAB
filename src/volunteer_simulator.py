@@ -35,7 +35,8 @@ class Volunteer_RMABSimulator(gym.Env):
                  budget, # B
                  reward_vector, # shape = (K)
                  initial_state = None,
-                 constraint_type = "hard" # or, soft
+                 constraint_type = "hard", # or, soft
+                 IF_global_context = True
                  ):
         '''
         Initialization
@@ -70,6 +71,7 @@ class Volunteer_RMABSimulator(gym.Env):
         self.timestep = 0
 
         self.constraint_type = constraint_type
+        self.IF_global_context = IF_global_context
 
         # assert_valid_transition(all_transitions)
 
@@ -168,8 +170,11 @@ class Volunteer_RMABSimulator(gym.Env):
         self.reward = reward
 
         self.states = next_states.astype(int)
-        self.context = np.random.choice(a = self.K, p = self.context_prob)
-        self.states = self.states%2 + 2*self.context
+
+        if self.IF_global_context:
+            self.context = np.random.choice(a = self.K, p = self.context_prob)
+            self.states = self.states%2 + 2*self.context
+            
         done = self.is_terminal()
 
         # print(f'  action {action}, sum {action.sum()}, reward {reward}')

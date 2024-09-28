@@ -2,9 +2,16 @@ import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 import os
+import random
 
-colors   = {'whittle': 'purple', 'ucw_value': 'b', 'ucw_qp': 'c', 'ucw_qp_min': 'goldenrod', 'ucw_ucb': 'darkorange',
-                'ucw_extreme': 'r', 'wiql': 'limegreen', 'random': 'brown', 'type_specific' : 'goldenrod'}
+colors = {'whittle': 'purple', 'global_context_SIMULATION-uniform_budget_allocation': 'b', 'global_context_LDS': 'c', 'soft_budget_FIXED_occupancy_measure': 'goldenrod', 
+          'independent_context_SIMULATION': 'darkorange', 'ucw_extreme': 'r', 'soft_budget_occupancy_measure': 'limegreen', 
+          'random': 'brown', 'type_specific' : 'goldenrod'}
+
+def random_color():
+    return "#{:06x}".format(random.randint(0, 0xFFFFFF))
+
+line_styles = ['-', '-.', '--', ':', (0, (3, 1, 1, 1)), (0, (5, 10)), (0, (5, 1)), (0, (3, 5, 1, 5)), (0, (1, 10))]
 
 def smooth(rewards, weight=0.7):
     """ smoothed exponential moving average """
@@ -22,36 +29,106 @@ def get_cum_sum(reward):
     cum_sum = cum_sum / (np.arange(len(cum_sum)) + 1)
     return smooth(cum_sum)
 
-def plot_rewards(rewards, use_algos, args, colors = colors):
+def plot_rewards(rewards, use_algos, args, colors=colors, line_styles=line_styles):
     # plot average cumulative reward
     this_path = f'./results/{args.str_time}'
 
-    if not os.path.exists(f'./results/{args.str_time}'):
-        os.makedirs(f'./results/{args.str_time}')
+    if not os.path.exists(this_path):
+        os.makedirs(this_path)
     
-    plt.figure()
-    for algo in use_algos:
-        plt.plot(get_cum_sum(rewards[algo]), c=colors[algo], label=algo)
+    # Plot average cumulative reward
+    plt.figure(figsize=(16, 12))
+    for idx, algo in enumerate(use_algos):
+        color = colors.get(algo, random_color())  # Use defined color or generate a random one
+        plt.plot(get_cum_sum(rewards[algo]), color=color, linestyle=line_styles[idx % len(line_styles)], label=algo, linewidth=2)
     plt.legend()
-    plt.xlabel(f'timestep $t$ ({args.n_episodes} episodes of length {args.episode_len})')
-    plt.ylabel('average cumulative reward')
+    plt.xlabel(f'Timestep $t$ ({args.n_episodes} episodes of length {args.episode_len})')
+    plt.ylabel('Average cumulative reward')
     plt.title(f'{args.data} - N={args.n_arms}, B={args.budget}, discount={args.discount}, {args.n_epochs} epochs')
 
     plt.savefig(this_path + f'/cum_reward_{args.exp_name_out}.pdf')
 
-    # plot average reward
-    plt.figure()
-    for algo in use_algos:
-        plt.plot(smooth(rewards[algo].mean(axis=0)), c=colors[algo], label=algo)
+    # Plot average reward
+    plt.figure(figsize=(16, 12))
+    for idx, algo in enumerate(use_algos):
+        color = colors.get(algo, random_color())  # Use defined color or generate a random one
+        plt.plot(smooth(rewards[algo].mean(axis=0)), color=color, linestyle=line_styles[idx % len(line_styles)], label=algo, linewidth=2)
     plt.legend()
-    plt.xlabel(f'timestep $t$ ({args.n_episodes} episodes of length {args.episode_len})')
-    plt.ylabel('average reward')
+    plt.xlabel(f'Timestep $t$ ({args.n_episodes} episodes of length {args.episode_len})')
+    plt.ylabel('Average reward')
     plt.title(f'{args.data} - N={args.n_arms}, budget={args.budget}, discount={args.discount}, {args.n_epochs} epochs')
-    # plt.savefig(f'results/{args.data}/avg_reward_{args.exp_name_out}_{args.str_time}.pdf')
+
     plt.savefig(this_path + f'/avg_reward_{args.exp_name_out}.pdf')
 
-import numpy as np
-import matplotlib.pyplot as plt
+def plot_rewards_over_N(rewards, use_algos, args, colors=colors, line_styles=line_styles):
+    # plot average cumulative reward
+    this_path = f'./results/{args.str_time}'
+
+    if not os.path.exists(this_path):
+        os.makedirs(this_path)
+    
+    plt.figure(figsize=(16, 12))
+    for idx, algo in enumerate(use_algos):
+        color = colors.get(algo, random_color())
+        plt.plot(rewards[algo], color=color, linestyle=line_styles[idx % len(line_styles)], label=algo, linewidth=2)
+    
+    plt.legend()
+    plt.xlabel(f'Num of arms $N$ ({args.N0} times {args.size})')
+    plt.ylabel('Average cumulative reward (over N and T)')
+    plt.title(f'{args.data} - N={args.n_arms}, B={args.budget}, {args.n_epochs} epochs')
+
+    plt.savefig(this_path + f'/cum_reward_{args.exp_name_out}.pdf')
+
+def plot_pareto_frontier(theta_list, total_rewards, args, colors=None, line_styles=None):
+    """
+    Plots the Pareto frontier of theta (fairness lower bound) vs. total reward.
+
+    Args:
+        theta_list (list or numpy.ndarray): List of theta values.
+        total_rewards (list or numpy.ndarray): Corresponding total rewards.
+        args (argparse.Namespace): Parsed command-line arguments containing experiment configurations.
+        colors (dict, optional): Dictionary mapping algorithms to colors.
+        line_styles (list, optional): List of line styles for plotting.
+    """
+    # Ensure colors and line_styles are provided
+    if colors is None:
+        colors = {}
+    if line_styles is None:
+        line_styles = ['-']
+
+    # Create the results directory if it doesn't exist
+    this_path = f'./results/{args.str_time}'
+    if not os.path.exists(this_path):
+        os.makedirs(this_path)
+
+    # Filter out NaN values for plotting
+    theta_list = np.array(theta_list)
+    total_rewards = np.array(total_rewards)
+    valid_indices = ~np.isnan(total_rewards)
+    theta_list_valid = theta_list[valid_indices]
+    total_rewards_valid = total_rewards[valid_indices]
+
+    # Plot the Pareto frontier
+    plt.figure(figsize=(8, 6))
+    color = colors.get('pareto_frontier', 'pink')  # Default color is blue
+    linestyle = line_styles[0]  # Use the first line style by default
+    plt.plot(theta_list_valid, total_rewards_valid, color=color, linestyle=linestyle,
+             marker='o', linewidth=2, label='Pareto Frontier')
+
+    # Set labels and title
+    plt.xlabel('Theta (Fairness Lower Bound)', fontsize=12)
+    plt.ylabel('Total Reward', fontsize=12)
+    plt.title(f'Pareto Frontier - N={args.N}, B={args.budget}, K={args.K}', fontsize=14)
+    plt.legend()
+    plt.grid(True)
+
+    # Save the plot
+    plot_filename = os.path.join(this_path, f'pareto_frontier_{args.exp_name_out}.pdf')
+    plt.savefig(plot_filename)
+    plt.close()  # Close the figure to free memory
+
+    print(f"Pareto frontier plot saved to {plot_filename}")
+
 
 def plot_type_tuple(reward, context_prob, args):
     """

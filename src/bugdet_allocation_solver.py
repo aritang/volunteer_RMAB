@@ -360,6 +360,43 @@ class BudgetSolver:
             var.upBound = None      # Reset upper bound to default (no upper bound)
         self.IF_solved = False  # Reset the solved flag
 
+    def set_fairness_lowerbound(self, lowerbound=0):
+        """
+        Sets constraints ensuring that the reward obtained for each context is no less than the specified lower bound.
+
+        Args:
+            lowerbound (float): The minimum acceptable reward for each context.
+        """
+        # Initialize or clear the list of fairness constraints
+        self.fairness_constraints = []
+        for k in range(self.K):
+            # Define the constraint expression
+            constraint_expr = pulp.lpSum(
+                [
+                    self.p[i][k] * self.w[k] * self.mu[(i, k * 2 + 1)]
+                    for i in range(self.N)
+                ]
+            ) >= lowerbound
+            # Name the constraint
+            constraint_name = f"Fairness_constraint_{k}"
+            # Add the constraint to the model
+            self.model += constraint_expr, constraint_name
+            # Keep track of the constraint name for future removal
+            self.fairness_constraints.append(constraint_name)
+        self.IF_solved = False  # Reset the solved flag
+
+    def reset_fairness_lowerbound(self):
+        """
+        Removes the fairness constraints from the model.
+        """
+        # Remove the fairness constraints from the model
+        for constraint_name in self.fairness_constraints:
+            if constraint_name in self.model.constraints:
+                del self.model.constraints[constraint_name]
+        # Clear the list of fairness constraints
+        self.fairness_constraints = []
+        self.IF_solved = False  # Reset the solved flag
+
     def get_budget_solution(self):
         """
         Retrieve the current solution of the LP model.
@@ -468,6 +505,32 @@ class BudgetSolver:
             ]
         )
         print(f"Theoretical expected reward: {theoretical_reward}")
+
+    def get_reward(self):
+        """
+        Reports the results by returning **theoretical reward**.
+
+        Also computes and stores the occupancy measures in numpy arrays.
+        """
+        return pulp.value(self.model.objective)
+        # Extract occupancy measures
+        self.mu_np = np.array(
+            [[pulp.value(self.mu[(i, j)]) for j in range(self.number_states)] for i in range(self.N)]
+        )
+        self.mu_negative_np = np.array(
+            [
+                [pulp.value(self.mu_negative[(i, j)]) for j in range(self.number_states)]
+                for i in range(self.N)
+            ]
+        )
+        theoretical_reward = np.sum(
+            [
+                np.sum(self.mu_np[i, k * 2 + 1]) * self.p[i][k]
+                for k in range(self.K)
+                for i in range(self.N)
+            ]
+        )
+        return theoretical_reward
 
 def solve_budget(simulator, MIP):
     """

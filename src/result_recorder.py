@@ -60,6 +60,10 @@ def write_result(rewards, use_algos, args, transition_probabilities, context_pro
     elif 'MIP_Solving_Budget' in use_algos or 'LP_Solving_Budget' in use_algos:
         args_dict = vars(args)
         args_dict['reward_LP_MIP'] = rewards
+    elif 'independent_context_SIMULATION' in use_algos:
+        args_dict = vars(args)
+    elif 'fairness_LP' in use_algos:
+        args_dict = vars(args)
     else:
         file_list, file_descriptions = save_rewards(rewards = rewards, use_algos = use_algos, args = args, this_path=this_path)
         args_dict = vars(args)
@@ -82,6 +86,7 @@ def write_result(rewards, use_algos, args, transition_probabilities, context_pro
     json_filename = this_path + '/param_settings.json'
     with open(json_filename, 'w') as json_file:
         json.dump(args_dict, json_file, indent=4, default=str)
+
 
 def MIP_n_SIM_write_result(MIP_rewards, SIM_rewards, args, all_transitions, context_prob, p, q, result_name = ""):
 
