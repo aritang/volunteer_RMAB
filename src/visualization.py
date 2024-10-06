@@ -96,11 +96,6 @@ def plot_pareto_frontier(theta_list, total_rewards, args, colors=None, line_styl
     if line_styles is None:
         line_styles = ['-']
 
-    # Create the results directory if it doesn't exist
-    this_path = f'./results/{args.str_time}'
-    if not os.path.exists(this_path):
-        os.makedirs(this_path)
-
     # Filter out NaN values for plotting
     theta_list = np.array(theta_list)
     total_rewards = np.array(total_rewards)
@@ -122,6 +117,11 @@ def plot_pareto_frontier(theta_list, total_rewards, args, colors=None, line_styl
     plt.legend()
     plt.grid(True)
 
+    
+    # Create the results directory if it doesn't exist
+    this_path = f'./results/{args.str_time}'
+    if not os.path.exists(this_path):
+        os.makedirs(this_path)
     # Save the plot
     plot_filename = os.path.join(this_path, f'pareto_frontier_{args.exp_name_out}.pdf')
     plt.savefig(plot_filename)

@@ -19,9 +19,6 @@ import matplotlib.pyplot as plt
 import copy  # To make deep copies of the BudgetSolver instance
 import pulp  # Ensure pulp is imported for LP solving
 
-# Ensure you have imported or defined the BudgetSolver class with the updated methods
-# from your previous code snippet.
-
 def find_theta_UB(budget_solver, theta_min=0, tol=1e-5, max_iter=100):
     """
     Perform binary search to find the maximum theta (theta_UB) such that the LP is feasible.
@@ -38,7 +35,8 @@ def find_theta_UB(budget_solver, theta_min=0, tol=1e-5, max_iter=100):
     # Solve the LP without fairness constraints to get the maximum total reward
     budget_solver.solve()
     if budget_solver.IF_solved:
-        theta_max = budget_solver.get_reward()
+        theta_max = budget_solver.get_reward()/min(budget_solver.context_prob)
+        print(f"original solution {budget_solver.get_reward()}, theoretical theta upperbound = {theta_max}")
     else:
         print("Error: LP is infeasible without fairness constraints.")
         return None
@@ -60,6 +58,7 @@ def find_theta_UB(budget_solver, theta_min=0, tol=1e-5, max_iter=100):
         budget_solver.reset_fairness_lowerbound()
         iteration += 1
     theta_UB = theta_min
+    print(f"found theta upperbound = {theta_max}")
     return theta_UB
 
 def compute_pareto_frontier(budget_solver, theta_UB, N_theta=100):
@@ -92,29 +91,10 @@ def compute_pareto_frontier(budget_solver, theta_UB, N_theta=100):
         budget_solver.reset_fairness_lowerbound()
     return theta_list, total_rewards
 
-
-if __name__ == '__main__':
-    args = parse_arguments()
-    # simulator is redundant here.
-    simulator, all_transitions, context_prob, reward_vector = initialize_instance_and_simulator(args = args)
-    args.all_transitions = all_transitions
-    args.context_prob = context_prob
-    args.reward_vector = reward_vector
-    p, q, _ = simulator.get_original_vectors()
-    args.p = p[0]
-    args.q = q[0]
-
-    budget_solver = BudgetSolver(
-                N=args.N,
-                K=args.K,
-                B=args.budget,
-                all_transitions=all_transitions,
-                context_prob=context_prob,
-                w=reward_vector,
-    )
+def plot_n_save_results_about_pareto_frontier(budget_solver, args):
     # Step 1: Find theta_UB
     theta_UB = find_theta_UB(budget_solver)
-    print(f"Theta Upper Bound: {theta_UB}")
+    logging.info(f"Theta Upper Bound: {theta_UB}")
 
     # Step 2: Compute Pareto frontier
     theta_list, total_rewards = compute_pareto_frontier(budget_solver, theta_UB, N_theta=50)
@@ -126,11 +106,40 @@ if __name__ == '__main__':
 
     colors = {'pareto_frontier': 'green'}
     line_styles = ['--']
-    
 
     args.theta_UB = theta_UB
     args.theta_list = theta_list
     args.reward_list = total_rewards
-    write_result(rewards=max(total_rewards), use_algos=["fairness_LP"], args=args, transition_probabilities=all_transitions, context_prob=context_prob, p = p, q = q, rewards_to_write=None, best_allocation=None)
+    write_result(rewards=max(total_rewards), use_algos=["fairness_LP"], args=args, transition_probabilities=args.all_transitions, context_prob=args.context_prob, p = args.p, q = args.q, rewards_to_write=None, best_allocation=None, result_name="pareto_frontier")
 
     plot_pareto_frontier(theta_list, total_rewards, args, colors=colors, line_styles=line_styles)
+    return theta_UB
+
+
+if __name__ == '__main__':
+    args = parse_arguments()
+    # simulator is redundant here.
+    simulator, all_transitions, context_prob, reward_vector = initialize_instance_and_simulator(args = args)
+    args.all_transitions = all_transitions
+    args.context_prob = context_prob
+    args.reward_vector = reward_vector
+    p, q, _ = simulator.get_original_vectors()
+    
+    if args.homogeneous:
+        args.p = p[0]
+        args.q = q[0]
+    else:
+        args.p = p
+        args.q = q
+
+    budget_solver = BudgetSolver(
+                N=args.N,
+                K=args.K,
+                B=args.budget,
+                all_transitions=all_transitions,
+                context_prob=context_prob,
+                w=reward_vector,
+    )
+    
+    theta_UB = plot_n_save_results_about_pareto_frontier(budget_solver=budget_solver, args=args)
+

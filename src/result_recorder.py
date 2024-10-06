@@ -42,7 +42,7 @@ def write_result(rewards, use_algos, args, transition_probabilities, context_pro
     # do two jobs: 
     # first, create a folder to store all the results
     # folder is just experiment time
-    this_path = f'./results/{args.str_time}' + result_name
+    this_path = f'./results/{args.str_time}'
 
     if not os.path.exists(this_path):
         os.makedirs(this_path)
@@ -83,7 +83,11 @@ def write_result(rewards, use_algos, args, transition_probabilities, context_pro
     args_dict["best_allocation"] = np.array(best_allocation).tolist()
 
     # Serialize dictionary to JSON
-    json_filename = this_path + '/param_settings.json'
+    json_filename = os.path.join(
+            this_path,
+            result_name + '_param_settings.json' if result_name != "" else 'param_settings.json'
+        )
+    # json_filename = this_path + '/param_settings.json'
     with open(json_filename, 'w') as json_file:
         json.dump(args_dict, json_file, indent=4, default=str)
 

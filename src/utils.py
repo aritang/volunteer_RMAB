@@ -74,10 +74,17 @@ def parse_arguments():
     parser.add_argument('--prefix',         '-p', help='prefix for file writing', type=str, default='')
     parser.add_argument('--name',         '-NAME', help='experiment name', type=str, default='')
 
+    parser.add_argument('--instance_type',     '-INSTANCE_TYPE', help='instance type (e.g. seed_based or frictional_real_data_based)', type=str, default='seed_based')
+    parser.add_argument('--identifier',        '-IDENTIFIER', help='instance identifier (e.g. N_25_K_3_homo_False_seed_43)', type=str, default='according to other args arguments')
+
     args = parser.parse_args()
     # special treatement
     args.homogeneous = args.homogeneous.lower() in ['true', '1', 'yes']
 
+    if args.instance_type == 'frictional_real_data_based':
+        args.homogeneous = False
+
+    args.identifier = f'N_{args.n_arms}_K_{args.num_context}_homo_{args.homogeneous}_seed_{args.seed}'
 
     args.exp_name_out = f'{args.data}_N{args.n_arms}_B{args.budget}_K{args.num_context}_T{args.episode_len*args.n_episodes}_epochs{args.n_epochs}'
 

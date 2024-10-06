@@ -262,6 +262,56 @@ def random_policy(env, n_episodes, n_epochs):
 
     return all_reward
 
+def occupancy_measure_index_policy(env, n_episodes=1, n_epochs=6):
+    env.constraint_type = "hard"
+
+    N         = env.N
+    T         = env.T * n_episodes
+    type_specific_budget = np.ones(env.K)*env.budget
+
+    env.reset_all()
+    from compute_occupancy_measure_index import compute_occupancy_measure_index
+    OM_index = compute_occupancy_measure_index(
+        N=env.N,
+        K=env.K,
+        budget=env.budget,
+        all_transitions=env.all_transitions,
+        context_prob=env.context_prob,
+        w=env.reward_vector
+        )
+    
+    all_reward = np.zeros((n_epochs, T + 1))
+
+    for epoch in range(n_epochs):
+        if epoch != 0:
+            env.reset_instance()
+
+        # Record initial reward
+        all_reward[epoch, 0] = env.get_reward_external()
+        
+        for t in range(1, T + 1):
+            state = env.observe()
+            state_OM_index = np.zeros(N)
+            for i in range(N):
+                state_OM_index[i] = OM_index[i][state[i]]
+        
+            sorted_index = np.argsort(state_OM_index)[::-1]
+
+            action = np.zeros(N, dtype=np.int8)
+
+            action[sorted_index[:type_specific_budget[env.context]]] = 1
+            logging.debug(f"number of arms pulled at time {t}: {np.sum(action)}")
+            next_state, reward, done, _ = env.step(action)
+            logging.debug(f"step_wise reward at time {t}: {reward}")
+            
+            if done and t < T:
+                    env.reset()
+
+            all_reward[epoch, t] = reward
+
+    return all_reward
+
+
 if __name__ == '__main__':
     # Example usage of the module
     N = 20
