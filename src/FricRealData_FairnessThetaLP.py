@@ -160,7 +160,6 @@ if __name__ == '__main__':
                 w=reward_vector,
     )
     
-
     theta_UB = plot_n_save_results_about_pareto_frontier(budget_solver=budget_solver, args=args)
 
     for theta in np.linspace(0, theta_UB, 100):

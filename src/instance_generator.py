@@ -34,6 +34,72 @@ import logging
 import matplotlib.pyplot as plt
 logging.basicConfig(level=logging.WARNING)  # Set the logging level
 
+MAX_HIS = 50
+MAX_REGION = 100
+DELTA_P = 0
+DELTA_F = 0.005
+FAV_LB = 0.5
+FAV_UB = 1
+
+def f_q(his, delta_f=DELTA_F):
+    """
+    Computes q value (recovery_rate) based on the historical jobs completed by a volunteer.
+
+    Args:
+        his (int): Number of historical jobs completed by the volunteer.
+
+    Returns:
+        float: Probability of success without action (q).
+    """
+    # Convex function for q increasing with historical jobs completed
+    return min(1, 1 - np.exp(-delta_f * his))
+
+def p_his(his, delta_p=DELTA_P):
+    """
+    Computes sensitivity to distance based on historical jobs completed by a volunteer.
+
+    Args:
+        his (int): Number of historical jobs completed by the volunteer.
+
+    Returns:
+        float: Sensitivity to distance.
+    """
+    # Sensitivity function, decreases with more historical jobs
+    return -delta_p * (MAX_HIS - his)
+
+def compute_distance(volunteer, region):
+    """
+    Computes Euclidean distance between a volunteer and a region.
+
+    Args:
+        volunteer (Volunteer): The volunteer object.
+        region (Region): The region object.
+
+    Returns:
+        float: Euclidean distance.
+    """
+    return np.sqrt((volunteer.x - region.x) ** 2 + (volunteer.y - region.y) ** 2)
+
+def compute_p(volunteer, regions):
+    """
+    Computes the probability of success with action for each volunteer-region pair.
+
+    input: one volunteer object, a list of regions
+    Returns:
+        p_matrix (numpy.ndarray): Probability matrix p of shape (K).
+    """
+    K = len(regions)
+    p_matrix = np.zeros(K)
+    favourabilities = [region.favourability for region in regions]
+    distances = [compute_distance(volunteer, region) for region in regions]
+    sensitivity = p_his(volunteer.his)
+    exp_values = [np.exp(sensitivity * d) * fav for d, fav in zip(distances, favourabilities)]
+    exp_sum = sum(exp_values)
+    for k in range(K):
+        p_matrix[i][k] = exp_values[k] / exp_sum
+        # ensure 0 <= p <= 1
+        p_matrix[i][k] = min(1, max(0, p_matrix[i][k]))
+    return p_matrix
 
 def initialize_instance_and_simulator(args):
     """
@@ -90,7 +156,6 @@ def initialize_instance_and_simulator(args):
     )
     return simulator, all_transitions, context_prob, reward_vector
 
-
 def initialize_real_instance(args):
     """
     Initializes the Contexual RMAB simulator based on args, default with real data.
@@ -135,7 +200,6 @@ def initialize_real_instance(args):
     #     reward_vector=reward_vector,
     # )
     return generator, all_transitions, context_prob, reward_vector
-
 
 class InstanceGenerator:
     """
@@ -446,31 +510,6 @@ def initial_state_generator(n_epochs, N, K, seed, context_prob):
 
     return state_list
 
-def f_q(his):
-    """
-    Computes q value (recovery_rate) based on the historical jobs completed by a volunteer.
-
-    Args:
-        his (int): Number of historical jobs completed by the volunteer.
-
-    Returns:
-        float: Probability of success without action (q).
-    """
-    # Convex function for q increasing with historical jobs completed
-    return min(1, 1 - np.exp(-0.005 * his))
-
-def p_his(his):
-    """
-    Computes sensitivity to distance based on historical jobs completed by a volunteer.
-
-    Args:
-        his (int): Number of historical jobs completed by the volunteer.
-
-    Returns:
-        float: Sensitivity to distance.
-    """
-    # Sensitivity function, decreases with more historical jobs
-    return -0.001 * (50 - his)
 
 class Region:
     def __init__(self, x, y, favourability):
@@ -501,7 +540,7 @@ class Volunteer:
         self.y = y
 
 class RealRegionalInstanceGenerator(InstanceGenerator):
-    def __init__(self, N, K, seed=66, data_dir='data', homogeneous=False, f_q=f_q, p_his=p_his, identifier = None):
+    def __init__(self, N, K, seed=66, data_dir='data', homogeneous=False, compute_p = compute_p, compute_q = compute_q, identifier = None):
         """
         Initializes the RealRegionalInstanceGenerator with given parameters and functions for q and p computation.
 
@@ -517,9 +556,9 @@ class RealRegionalInstanceGenerator(InstanceGenerator):
         super().__init__(N, K, seed, data_dir, homogeneous)
         self.regions = []
         self.volunteers = []
-        self.f_q = f_q
-        self.p_his = p_his
 
+        self.compute_p = compute_p
+        self.compute_q = compute_q
 
         # default fixed
         self.instance_type = 'frictional_real_data_based'
@@ -539,10 +578,10 @@ class RealRegionalInstanceGenerator(InstanceGenerator):
             random.seed(self.seed)
 
         # Generate K regions with random locations and favourability scores
-        self.regions = [Region(random.uniform(0, 100), random.uniform(0, 100), random.uniform(0.5, 1.5)) for _ in range(self.K)]
+        self.regions = [Region(random.uniform(0, MAX_REGION), random.uniform(0, MAX_REGION), random.uniform(FAV_LB, FAV_UB)) for _ in range(self.K)]
 
         # Generate N volunteers with random historical jobs completed and locations
-        self.volunteers = [Volunteer(random.randint(1, 50), random.uniform(0, 100), random.uniform(0, 100)) for _ in range(self.N)]
+        self.volunteers = [Volunteer(random.randint(1, MAX_HIS), random.uniform(0, MAX_REGION), random.uniform(0, MAX_REGION)) for _ in range(self.N)]
 
         self.context_prob = np.random.rand(self.K)
         self.context_prob /= np.sum(self.context_prob)
@@ -658,47 +697,6 @@ class RealRegionalInstanceGenerator(InstanceGenerator):
             save_dir = os.path.join(dir, 'f_q_p_his_plot.png')
         
         plt.savefig(save_dir)
-
-
-    # def visualize_volunteers_and_regions(self, dir = None):
-    #     """
-    #     Visualizes the locations of volunteers and regions on a 2D plane.
-    #     """
-    #     plt.figure(figsize=(10, 8))
-    #     # Plot regions
-    #     region_x = [region.x for region in self.regions]
-    #     region_y = [region.y for region in self.regions]
-    #     region_fav = [region.favourability for region in self.regions]
-    #     plt.scatter(region_x, region_y, c='red', marker='^', s=[100 * fav for fav in region_fav], label='Regions (scaled by favourability)')
-    #     # Plot volunteers
-    #     volunteer_x = [volunteer.x for volunteer in self.volunteers]
-    #     volunteer_y = [volunteer.y for volunteer in self.volunteers]
-    #     plt.scatter(volunteer_x, volunteer_y, c='blue', marker='o', s=50, label='Volunteers')
-
-    #     plt.xlabel('X Coordinate')
-    #     plt.ylabel('Y Coordinate')
-    #     plt.title('Volunteers and Regions on a Plane')
-    #     plt.legend()
-    #     plt.grid(True)
-    #     plt.savefig(os.path.join(
-    #         self.data_dir, 
-    #         self.instance_type, 
-    #         self.identifier, 
-    #         'volunteers_regions_plot.png'
-    #         ))
-        
-    #     if dir is None:
-    #         save_dir = os.path.join(
-    #         self.data_dir, 
-    #         self.instance_type, 
-    #         self.identifier, 
-    #         'volunteers_regions_plot.png'
-    #         )
-    #     else:
-    #         save_dir = os.path.join(dir, 'volunteers_regions_plot.png')
-        
-    #     plt.savefig(save_dir)
-    #     # plt.show()
 
     def visualize_f_q_and_p_his(self, dir = None):
         """
